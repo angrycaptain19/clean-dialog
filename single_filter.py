@@ -43,10 +43,9 @@ def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
     for dialog in tqdm.tqdm(data, mininterval=1):
         # session level
         # dialog = session_check(opt, dialog)
-        if opt.utterance_dedup:
-            if len(set(dialog)) < 2:
-                dirty_data["duplicated"]["utterance_level"].add(dialog[0])
-                continue
+        if opt.utterance_dedup and len(set(dialog)) < 2:
+            dirty_data["duplicated"]["utterance_level"].add(dialog[0])
+            continue
 
         new_dialog = []
         for i in range(len(dialog)):
@@ -225,11 +224,7 @@ def utterance_clean(opt, utterance, blacklist, dirty_data, time_dict, cut, retur
         utterance = str_level.bert_clean(utterance)
 
     ### word level
-    if cut:
-        word_list = list(jieba.cut(utterance))
-    else:
-        word_list = utterance.strip().split()
-
+    word_list = list(jieba.cut(utterance)) if cut else utterance.strip().split()
     if word_list and opt.no_alpha_noise:
         alpha_word = str_level.not_en(word_list, blacklist["english"])
         if alpha_word:

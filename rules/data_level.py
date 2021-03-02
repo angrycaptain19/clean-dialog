@@ -14,10 +14,12 @@ def de_ad(data, dirty_data):
     for dialog in data:
         for i in range(1, len(dialog)):
             resp_dict[dialog[i]].add(dialog[i - 1])
-    ad_resp_dict = {}
-    for k, v in resp_dict.items():
-        if len(k.replace(" ", "")) > 20 and len(v) > 2:
-            ad_resp_dict[k] = len(v)
+    ad_resp_dict = {
+        k: len(v)
+        for k, v in resp_dict.items()
+        if len(k.replace(" ", "")) > 20 and len(v) > 2
+    }
+
     ad_resp = sorted(ad_resp_dict.items(), key=lambda x: x[1], reverse=True)
     dirty_data["ad"] = ad_resp
     logger.info("Ad len: {}".format(len(ad_resp)))
@@ -27,10 +29,9 @@ def de_ad(data, dirty_data):
     for dialog in data:
         start = 0
         for i in range(1, len(dialog)):
-            if dialog[i] in resp_set:
-                if i - start > 2:
-                    new_data.append(dialog[start:i])
-                    start = i + 1
+            if dialog[i] in resp_set and i - start > 2:
+                new_data.append(dialog[start:i])
+                start = i + 1
         if (len(dialog) - start) > 1:
             new_data.append(dialog[start:])
     logger.info("Data len after de_de: {}".format(len(new_data)))
@@ -41,7 +42,7 @@ def de_generic(data, dirty_data, tri_path, num):
     """From dialogpt"""
 
     def ngrams(resp, n):
-        ngram = list()
+        ngram = []
         if len(resp) >= n:
             for i in range(len(resp) - n + 1):
                 ngram.append(resp[i: i + n])

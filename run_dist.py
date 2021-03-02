@@ -30,9 +30,14 @@ def get_filter_set(tool_dir):
     en_set = {'l', '.', 'W', 't', 'o', 'z', 'k', 'C', 'B', 'y', '/', 'w', 'a', 's', 'h', 'x', '_', 'n', 'g', 'i',
               'd', 'e'}
     confuse_set = set()
-    blacklist = {"name": person_name_set, "str_blacklist": black_str_set, "word_blacklist": black_list_set,
-                 "confuse": confuse_set, "english": en_set, "special_topic": special_topic_str_set}
-    return blacklist
+    return {
+        "name": person_name_set,
+        "str_blacklist": black_str_set,
+        "word_blacklist": black_list_set,
+        "confuse": confuse_set,
+        "english": en_set,
+        "special_topic": special_topic_str_set,
+    }
 
 
 def main():
