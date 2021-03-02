@@ -30,11 +30,11 @@ REPLY_MENTION_REGEX = re.compile(r"回复 *@.*?: *")
 
 
 def too_short(utter, length=2):
-    return True if len(utter) < length else False
+    return len(utter) < length
 
 
 def too_long(utter, length=1000):
-    return True if length < len(utter) else False
+    return length < len(utter)
 
 
 def remove_emoji(text):
@@ -50,7 +50,12 @@ MAX_LEN_EMOJI = max(len(x) for x in emoji.UNICODE_EMOJI.keys()) + 2
 def remove_emoji2(utter):
     blacklist = set(emoji.UNICODE_EMOJI.keys())
     # max_len = max(len(x) for x in blacklist)
-    all_gram = set([utter[i:j + 1] for i in range(len(utter)) for j in range(i, min(len(utter), i + MAX_LEN_EMOJI))])
+    all_gram = {
+        utter[i : j + 1]
+        for i in range(len(utter))
+        for j in range(i, min(len(utter), i + MAX_LEN_EMOJI))
+    }
+
     overlap = blacklist & all_gram
     if len(overlap) > 0:
         return overlap.pop()
@@ -67,7 +72,12 @@ def de_str_blacklist(utter, blacklist):
 
 def de_str_blacklist2(utter, blacklist, max_len=110):
     # max_len = max(len(x) for x in blacklist)
-    all_gram = set([utter[i:j + 1] for i in range(len(utter)) for j in range(i, min(len(utter), i + max_len))])
+    all_gram = {
+        utter[i : j + 1]
+        for i in range(len(utter))
+        for j in range(i, min(len(utter), i + max_len))
+    }
+
     overlap = blacklist & all_gram
     if len(overlap) > 0:
         return overlap.pop()
@@ -91,10 +101,12 @@ def de_word_blacklist(word_list, blacklist):
 
 def not_en(word_list, en_set):
     for word in word_list:
-        if word.encode('UTF-8').isalpha():
-            if not wordnet.synsets(word):
-                if word not in en_set:
-                    return word
+        if (
+            word.encode('UTF-8').isalpha()
+            and not wordnet.synsets(word)
+            and word not in en_set
+        ):
+            return word
     return None
 
 
@@ -106,23 +118,19 @@ def bert_clean(text):
         """Checks whether `chars` is a control character."""
         # These are technically control characters but we count them as whitespace
         # characters.
-        if char == "\t" or char == "\n" or char == "\r":
+        if char in ["\t", "\n", "\r"]:
             return False
         cat = unicodedata.category(char)
-        if cat.startswith("C"):
-            return True
-        return False
+        return bool(cat.startswith("C"))
 
     def _is_whitespace(char):
         """Checks whether `chars` is a whitespace character."""
         # \t, \n, and \r are technically contorl characters but we treat them
         # as whitespace since they are generally considered as such.
-        if char == " " or char == "\t" or char == "\n" or char == "\r":
+        if char in [" ", "\t", "\n", "\r"]:
             return True
         cat = unicodedata.category(char)
-        if cat == "Zs":
-            return True
-        return False
+        return cat == "Zs"
 
     output = []
     for char in text:
@@ -151,7 +159,7 @@ def judge_duplicated_phrase(seq_str, times, length=2):
     """
     count = 0
     n = len(seq_str)
-    for k in range(0, n - (times + 1) * (length + 1)):
+    for k in range(n - (times + 1) * (length + 1)):
         for i in range(times - 1, (n - k) // times + 1):
             a = seq_str[k: k + i]
             j = k + i
@@ -183,10 +191,10 @@ def reduce_duplicated_phrase(seq_str, times=3, length=1):
 def judge_yda_dupl(seq_list):
     word_dict = {}
     for word in seq_list:
-        if word not in word_dict.keys():
-            word_dict[word] = 1
-        else:
+        if word in word_dict:
             word_dict[word] += 1
+        else:
+            word_dict[word] = 1
     # fitler duplicate
     num_list = list(word_dict.values())
     num_list.sort(reverse=True)
@@ -194,10 +202,9 @@ def judge_yda_dupl(seq_list):
     if len(num_list) <= 1 / 3 * len(seq_list):
         return True
 
-    if 3 < len(num_list) < len(seq_list):
-        if sum(num_list[: 3]) > 0.75 * len(seq_list):
-            return True
-    return False
+    return 3 < len(num_list) < len(seq_list) and sum(
+        num_list[:3]
+    ) > 0.75 * len(seq_list)
 
 
 def deduplicate_chars(seq_str, no_single=False):
@@ -222,7 +229,7 @@ def deduplicate_chars(seq_str, no_single=False):
 
     end = seven_i if n > 5 else len(seq_str)
     new_list.append(seq_str[last_i:end].strip())
-    if no_single and len(char_set) < 2 and 4 < len(seq_str):
+    if no_single and len(char_set) < 2 and len(seq_str) > 4:
         return ""
     return "".join(new_list) if new_list else seq_str
 
